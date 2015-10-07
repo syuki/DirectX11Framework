@@ -15,19 +15,14 @@
     <Filter Include="src\Interface">
       <UniqueIdentifier>{c84c2375-85ae-4dd5-ade3-4a9ea2345831}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Renderer">
+      <UniqueIdentifier>{6f966427-1d9e-4a11-8a4d-2c15f2e2610d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\DirectX11Modile.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="include\DirectX11Module.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="include\Util\SafeFunctions.h">
       <Filter>src\Util</Filter>
     </ClInclude>
@@ -37,5 +32,13 @@
     <ClInclude Include="include\Util\Math.h">
       <Filter>src\Util</Filter>
     </ClInclude>
+    <ClInclude Include="include\Renderer\DirectX11Module.h">
+      <Filter>src\Renderer</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Renderer\DirectX11Modile.cpp">
+      <Filter>src\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

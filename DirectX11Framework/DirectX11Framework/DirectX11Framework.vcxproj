@@ -87,13 +87,13 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\DirectX11Modile.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="include\DirectX11Module.h" />
     <ClInclude Include="include\Interface\ReferenceCountInterface.h" />
+    <ClInclude Include="include\Renderer\DirectX11Module.h" />
     <ClInclude Include="include\Util\SafeFunctions.h" />
     <ClInclude Include="include\Util\Math.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Renderer\DirectX11Modile.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -309,11 +309,6 @@ public:
   float x, y, z, w;
 };
 
-void test(){
-  Vector2 a(1, 2);
-  Vector2 b = a * 4.f;
-}
-
 } // namespace snlib
 
 //EOF

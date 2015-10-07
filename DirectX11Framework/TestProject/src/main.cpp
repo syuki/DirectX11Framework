@@ -1,16 +1,12 @@
 #include <Windows.h>
 #include "module/WindowModule.h"
-#include <DirectX11Module.h>
+#include <Renderer/DirectX11Module.h>
 #include <Util/Math.h>
 
 #pragma comment(lib, "DirectX11Framework.lib")
 using namespace snlib;
 
 int WINAPI WinMain(HINSTANCE ins, HINSTANCE prev, LPSTR cmd, int show) {
-
-  Quaternion a(2, 1, 1, 1);
-  Quaternion b(1, 1, 2, 1);
-  Quaternion c = a * b;
 
   // ウィンドウ生成
   WindowModule* window = new WindowModule(L"TestProject", 800, 600, ins);
