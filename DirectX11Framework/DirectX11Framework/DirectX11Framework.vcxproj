@@ -87,18 +87,23 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\Buffer\VertexBuffer.h" />
     <ClInclude Include="include\Interface\ReferenceCountInterface.h" />
     <ClInclude Include="include\Renderer\DirectX11Module.h" />
     <ClInclude Include="include\Renderer\SwapChain.h" />
+    <ClInclude Include="include\Shader\GeometryShader.h" />
+    <ClInclude Include="include\Shader\InputLayout.h" />
+    <ClInclude Include="include\Shader\PixelShader.h" />
+    <ClInclude Include="include\Shader\VertexShader.h" />
     <ClInclude Include="include\Util\DataContainer.h" />
     <ClInclude Include="include\Util\RawData.h" />
     <ClInclude Include="include\Util\SafeFunctions.h" />
     <ClInclude Include="include\Util\Math.h" />
-    <ClInclude Include="src\Renderer\SwapChain.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Renderer\DirectX11Modile.cpp" />
     <ClCompile Include="src\Renderer\SwapChain.cpp" />
+    <ClCompile Include="src\Util\DataContainer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

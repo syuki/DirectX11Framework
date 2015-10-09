@@ -107,25 +107,23 @@ SwapChain::~SwapChain() {
 void SwapChain::SetOutput(IDXGIOutput* output, bool is_full) {
 
 
-  DXGI_MODE_DESC desc;
-  if (is_full) {
-    _ASSERT_EXPR(output, L"SwapChain : output‚ªnull‚Å‚·");
-    UINT count;
-    output->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, 0, &count, nullptr);
-    DXGI_MODE_DESC* desc_list = new DXGI_MODE_DESC[count];
-    output->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, 0, &count, desc_list);
-    desc = desc_list[count - 1];
-    delete[] desc_list;
-  }
-  else {
-    desc = _window_mode_desc;
-  }
-  _swap_chain->ResizeTarget(&desc);
   _swap_chain->SetFullscreenState(is_full, output);
 
   //desc.RefreshRate.Denominator = 0;
   //desc.RefreshRate.Numerator = 0;
   //_swap_chain->SetFullscreenState(is_full, output);
+}
+
+void SwapChain::ResizeBuffer(IDXGIOutput* output) {
+  DXGI_MODE_DESC desc;
+  _ASSERT_EXPR(output, L"SwapChain : output‚ªnull‚Å‚·");
+  UINT count;
+  output->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, 0, &count, nullptr);
+  DXGI_MODE_DESC* desc_list = new DXGI_MODE_DESC[count];
+  output->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, 0, &count, desc_list);
+  desc = desc_list[count - 1];
+  delete[] desc_list;
+  _swap_chain->ResizeTarget(&desc);
 }
 
 /// @fn Present

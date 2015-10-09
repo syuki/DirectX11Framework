@@ -20,9 +20,15 @@ public:
   /// @param[in] is_full フルスクリーンか
   void SetOutput(IDXGIOutput* output, bool is_full);
 
+  void ResizeBuffer(IDXGIOutput* output);
+
   /// @fn Present
   /// @brief プレゼント
   void Present();
+
+  /// @fn GetRenderTargetView
+  /// @brief レンダーターゲットビュー取得
+  ID3D11RenderTargetView* GetRenderTargetView() { return _render_target_view; }
 
   SNLIB_DEFAULT_RELEASE_FUNCTION
 protected:

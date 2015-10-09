@@ -18,6 +18,12 @@
     <Filter Include="src\Renderer">
       <UniqueIdentifier>{6f966427-1d9e-4a11-8a4d-2c15f2e2610d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Shader">
+      <UniqueIdentifier>{75d501ab-440c-493c-89d1-d98298f1a003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Buffer">
+      <UniqueIdentifier>{032c8ab9-f855-4fca-b111-9c15cb0ffaa7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -35,9 +41,6 @@
     <ClInclude Include="include\Renderer\DirectX11Module.h">
       <Filter>src\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="src\Renderer\SwapChain.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="include\Renderer\SwapChain.h">
       <Filter>src\Renderer</Filter>
     </ClInclude>
@@ -47,6 +50,21 @@
     <ClInclude Include="include\Util\DataContainer.h">
       <Filter>src\Util</Filter>
     </ClInclude>
+    <ClInclude Include="include\Shader\VertexShader.h">
+      <Filter>src\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Buffer\VertexBuffer.h">
+      <Filter>src\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Shader\GeometryShader.h">
+      <Filter>src\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Shader\InputLayout.h">
+      <Filter>src\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Shader\PixelShader.h">
+      <Filter>src\Shader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Renderer\DirectX11Modile.cpp">
@@ -54,6 +72,9 @@
     </ClCompile>
     <ClCompile Include="src\Renderer\SwapChain.cpp">
       <Filter>src\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Util\DataContainer.cpp">
+      <Filter>src\Util</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -31,6 +31,14 @@ public:
 
 protected:
 private:
+  /// @fn DataContainer
+  /// @brief コンストラクタ
+  DataContainer(){}
+
+  /// @fn ~DataContainer
+  /// @brief デストラクタ
+  ~DataContainer(){}
+
   static std::map<std::string, RawData> _data_container;
 };
 

@@ -12,6 +12,9 @@
     <Filter Include="src\module">
       <UniqueIdentifier>{ab79f5b0-0c5d-4da5-a440-9ed3b2795283}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\shader">
+      <UniqueIdentifier>{ecba1e33-be60-45a8-ba60-a28f220736bc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -25,5 +28,16 @@
     <ClInclude Include="src\module\WindowModule.h">
       <Filter>src\module</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="src\shader\VertexShader.hlsl">
+      <Filter>src\shader</Filter>
+    </FxCompile>
+    <FxCompile Include="src\shader\PixelShader.hlsl">
+      <Filter>src\shader</Filter>
+    </FxCompile>
+    <FxCompile Include="src\shader\GeometryShader.hlsl">
+      <Filter>src\shader</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
