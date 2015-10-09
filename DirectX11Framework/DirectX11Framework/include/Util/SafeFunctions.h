@@ -4,6 +4,8 @@
 /// @author syuki nishida
 #pragma once
 
+#include <crtdbg.h>
+
 /// @namespace snlib
 namespace snlib {
 
@@ -24,7 +26,8 @@ template<class T>inline void SafeDeleteArray(T a) {
 /// @fn SafeRelease
 template<class T>inline void SafeRelease(T a) {
   if (!a) return;
-  a->Release();
+  unsigned long count = a->Release();
+  _ASSERT_EXPR(!count, L"Release miss");
   a = nullptr;
 }
 

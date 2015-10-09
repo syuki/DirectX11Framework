@@ -2,8 +2,11 @@
 /// @brief 参照カウンター機能の規定クラス
 /// @date 2015/10/02
 /// @author syuli nishida
+#pragma once
 
 #include <string.h>
+
+#define SNLIB_DEFAULT_RELEASE_FUNCTION unsigned long Release(){if(_counter==1){delete this;return 0;}return --_counter;}
 
 /// @namespace snlib
 namespace snlib {
@@ -16,13 +19,7 @@ public:
 
   /// @fn Release
   /// @brief 参照カウンタ減算 0で消滅
-  inline unsigned long Release() {
-    if (_counter == 1) {
-      delete this;
-      return 0;
-    }
-    return -- _counter;
-  }
+  virtual unsigned long Release() = 0;
 
   /// @fn GetIdentifier
   /// @brief 識別子取得
@@ -32,12 +29,13 @@ protected:
   /// @fn ReferenceCountInterface
   /// @brief コンストラクタ
   /// @param[in] identifier クラスを一意にする識別子 15文字まで
-  inline ReferenceCountInterface(const char* identifier) {
+  inline ReferenceCountInterface(const char* identifier) : _counter(1) {
     memcpy_s(_identifier, 16, identifier, strlen(identifier));
   }
 
-private:
   unsigned long _counter;
+
+private:
   char _identifier[16];
 };
 

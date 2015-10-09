@@ -35,9 +35,24 @@
     <ClInclude Include="include\Renderer\DirectX11Module.h">
       <Filter>src\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="src\Renderer\SwapChain.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Renderer\SwapChain.h">
+      <Filter>src\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Util\RawData.h">
+      <Filter>src\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Util\DataContainer.h">
+      <Filter>src\Util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Renderer\DirectX11Modile.cpp">
+      <Filter>src\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Renderer\SwapChain.cpp">
       <Filter>src\Renderer</Filter>
     </ClCompile>
   </ItemGroup>

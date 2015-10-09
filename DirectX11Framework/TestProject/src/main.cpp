@@ -25,6 +25,8 @@ int WINAPI WinMain(HINSTANCE ins, HINSTANCE prev, LPSTR cmd, int show) {
     renderer->render();
   }
 
+  renderer->Release();
+
   // I—¹
   window->Finalize();
   delete window;

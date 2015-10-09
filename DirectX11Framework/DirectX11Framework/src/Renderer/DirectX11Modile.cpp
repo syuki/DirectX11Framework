@@ -4,9 +4,12 @@
 /// @author syuki nishida
 
 #include "Renderer/DirectX11Module.h"
+#include "Renderer/SwapChain.h"
+#include "Util/SafeFunctions.h"
 #include <vector>
 #include <crtdbg.h>
 #include <errno.h>
+#include <Util/RawData.h>
 
 #pragma comment( lib, "d3d11.lib" )
 #pragma comment(lib, "dxgi.lib")
@@ -20,152 +23,11 @@ DirectX11Module* DirectX11Module::CreateDirectX11Module(HWND window_handle) {
   return new DirectX11Module(window_handle);
 }
 
-/// @class RawFile
-class RawData {
-public:
-
-  /// @fn RawData
-  /// @brief デフォルトコンストラクタ
-  RawData() : pointer_(nullptr), size_(0) {
-  }
-
-  /// @fn RawData
-  /// @brief ムーブコンストラクタ
-  /// @param[in] src 移動元
-  RawData(RawData&& src)
-    : pointer_(src.pointer_),
-    size_(src.size_) {
-    src.pointer_ = nullptr;
-    src.size_ = 0;
-  }
-
-  /// @fn RawData
-  /// @brief ファイルを指定して読み込む
-  /// @param[in] filename ファイル名
-  RawData(const char* filename) {
-    LoadFromFile(filename);
-  }
-
-  /// @fn RawData
-  /// @brief ポインタとサイズを渡して読み込む
-  /// @param[in] pointer 読み込ませたい
-  /// @param[in] size 渡したいサイズ
-  RawData(void* pointer, size_t size) {
-    LoadFromPointer(pointer_, size);
-  }
-
-  /// @fn Allocate
-  /// @brief メモリ確保
-  /// @param[in] size 確保サイズ
-  /// @param[in] force 強行するか
-  /// @return 確保できたらtrue
-  bool Allocate(size_t size, bool force) {
-    _ASSERT_EXPR(size, L"\"RawData\" : allocate size is zero.");
-    if (size_ && !force) return false;
-    Free();
-
-    size_ = size;
-    pointer_ = new char[size_];
-
-    return true;
-  }
-
-  /// @fn Free
-  /// @brief 確保したメモリ解放
-  /// @return 解放できたらtrue
-  bool Free() {
-    if (!size_) return false;
-
-    delete[] pointer_;
-    pointer_ = nullptr;
-    size_ = 0;
-
-    return true;
-  }
-
-  /// @fn Copy
-  /// @brief 引数のメモリをコピーする
-  ///        メモリが確保してある場合はそのまま使う
-  ///        足らない場合はこの関数は失敗する
-  /// @param[in] source コピーソース
-  /// @param[in] size サイズ
-  /// @param[in] clear メモリ内をクリアするか
-  /// @return コピーできたらture
-  bool Copy(void* source, size_t size, bool clear = true) {
-    if (size > size_) return false;
-
-    if (clear) {
-      ZeroMemory(pointer_, size_);
-    }
-    memcpy_s(pointer_, size_, source, size);
-
-    return true;
-  }
-
-  /// @fn LoadFromFile
-  /// @brief ファイルから読み込み
-  /// @param[in] filename ファイル名
-  /// @return 読み込めたらtrue
-  bool LoadFromFile(const char* filename) {
-    FILE* fp;
-    int ret = fopen_s(&fp, filename, "rb");
-    if (ret == EINVAL) return false;
-
-    fpos_t file_size;
-    fseek(fp, 0, SEEK_END);
-    fgetpos(fp, &file_size);
-    fseek(fp, 0, SEEK_SET);
-    if (file_size > UINT_MAX || !file_size) {
-      _ASSERT_EXPR(file_size <= UINT_MAX, L"\"RawData\" : file size is big.");
-      _ASSERT_EXPR(file_size, L"\"RawData\" : file size is zero.");
-      fclose(fp);
-      return false;
-    }
-
-    size_ = static_cast<size_t>(file_size);
-    char* buffer = new char[size_];
-    fread_s(buffer, size_, sizeof(char), size_, fp);
-
-    Allocate(size_, true);
-    Copy(buffer, size_);
-
-    return true;
-  }
-
-  /// @fn LoadFromPointer
-  /// @brief ポインタから読み込む
-  ///        メモリが確保されている場合は破棄して取り直す
-  /// @param[in] pointer 読みたいポインタ
-  /// @param[in] size 読ませたいサイズ
-  /// @param[in] force 強行するか
-  /// @return 読み込めたらtrue
-  bool RawData::LoadFromPointer(void* pointer, size_t size, bool force = false) {
-    if (!Allocate(size, true)) return false;
-    return Copy(pointer, size);
-  }
-
-  /// @fn GetPointer
-  /// @brief ポインタ取得
-  /// @return ポインタ
-  __forceinline void* GetPointer() { return pointer_; }
-
-  /// @fn GetSize
-  /// @brief サイズ取得
-  /// @return サイズ
-  __forceinline size_t GetSize() { return size_; }
-
-  /// @fn Empty
-  /// @brief 値が入っていないか
-  /// @return 空ならtrue
-  __forceinline bool Empty() { return pointer_ ? false : true; }
-
-protected:
-
-private:
-
-  void* pointer_;
-  size_t size_;
-};
+/// @fn CreateSwapChain
+/// @brief スワップチェイン作成
+SwapChain* DirectX11Module::CreateSwapChain(HWND window_handle) {
+  return new SwapChain(_factory, _device, window_handle);
+}
 
 ID3D11VertexShader* vertex_shader;
 ID3D11PixelShader* pixel_shader;
@@ -298,21 +160,45 @@ bool CreateVertexBuffers(ID3D11Device* device) {
 /// @param[in] window_handle ウィンドウハンドル
 DirectX11Module::DirectX11Module(HWND window_handle) :
 ReferenceCountInterface("dx11module"),
-_window_handle(window_handle) {
+_window_handle(window_handle),
+_device(nullptr),
+_device_context(nullptr),
+_factory(nullptr) {
 
-  // クライアント領域サイズ取得
-  RECT client_rect;
-  GetClientRect(window_handle, &client_rect);
+  // ファクトリー作成
+  CreateDXGIFactory1(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&_factory));
 
-  // バッファサイズ設定
-  ULONG width = client_rect.right - client_rect.left;
-  ULONG height = client_rect.bottom - client_rect.top;
+  _CreateDevice();
 
-  // デバイスフラグ設定
-  UINT device_frag = 0;
-#ifdef _DEBUG
-  device_frag = D3D11_CREATE_DEVICE_DEBUG;
-#endif
+  _swap_chain = CreateSwapChain(window_handle);
+
+  //LoadToCreateVertexShader(_device);
+
+  //LoadToCreateGeometryShader(_device);
+
+  //LoadToCreatePixelShader(_device);
+
+  //CreateVertexBuffers(_device);
+
+  //CreateInputLayout(_device, _device_context);
+
+}
+
+/// @fn ~DirectX11Module
+/// @brief デストラクタ
+DirectX11Module::~DirectX11Module() {
+  _swap_chain->Release();
+  _DeleteDevice();
+  SafeRelease(_factory);
+}
+
+/// @fn _CreateDevice
+/// @brief デバイス作成
+/// @param[in] adapter アダプタ
+void DirectX11Module::_CreateDevice(IDXGIAdapter1* adapter) {
+
+  _ASSERT_EXPR(!_device, L"DirectX11Framework : デバイスが既にあります");
+  _ASSERT_EXPR(!_device_context, L"DirectX11Framework : Contextが既にあります");
 
   // ドライバタイプ設定
   D3D_DRIVER_TYPE driver_type[] = {
@@ -330,25 +216,17 @@ _window_handle(window_handle) {
   };
   ULONG feature_level_count = sizeof(feature_level) / sizeof(D3D_FEATURE_LEVEL);
 
-  // ファクトリー作成
-  IDXGIFactory1* factory;
-  CreateDXGIFactory1(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&factory));
+  // デバイスフラグ設定
+  UINT device_frag = 0;
+#ifdef _DEBUG
+  device_frag = D3D11_CREATE_DEVICE_DEBUG;
+#endif
 
-  IDXGIAdapter1* adapter;
-  for (UINT index = 0;; index++) {
-    HRESULT ret = factory->EnumAdapters1(index, &adapter);
-    if (ret == DXGI_ERROR_NOT_FOUND) {
-      break;
-    }
-    adapter->Release();
-  }
-
-  // 成功するまでループをやめない
   HRESULT ret;
   for (ULONG i = 0; i < driver_type_count; i++) {
     ret = D3D11CreateDevice(
       adapter,
-      adapter ? D3D_DRIVER_TYPE_UNKNOWN : driver_type[i],
+      driver_type[i],
       nullptr,
       device_frag,
       feature_level,
@@ -362,83 +240,25 @@ _window_handle(window_handle) {
       break;
     }
   }
-  _ASSERT_EXPR(SUCCEEDED(ret), L"デバイスの作成に失敗");
-
-  // スワップチェイン設定
-  DXGI_SWAP_CHAIN_DESC swap_chain = { 0 };
-  swap_chain.BufferDesc.Width = width;
-  swap_chain.BufferDesc.Height = height;
-  swap_chain.BufferDesc.RefreshRate.Denominator = 60;
-  swap_chain.BufferDesc.RefreshRate.Numerator = 1;
-  swap_chain.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-  swap_chain.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-  swap_chain.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-  swap_chain.SampleDesc.Count = 1;
-  swap_chain.SampleDesc.Quality = 0;
-  swap_chain.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-  swap_chain.BufferCount = 1;
-  swap_chain.OutputWindow = window_handle;
-  swap_chain.Windowed = true;
-  swap_chain.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-  swap_chain.Flags = 0;
-
-  // スワップチェイン作成
-  factory->CreateSwapChain(_device, &swap_chain, &_swap_chain);
-  factory->Release();
-  factory = nullptr;
-
-  // バックバッファ取得
-  ID3D11Texture2D* back_buffer_ = nullptr;
-  ret = _swap_chain->GetBuffer(0,
-    __uuidof(ID3D11Texture2D),
-    (void**)&back_buffer_);
-  _ASSERT_EXPR(SUCCEEDED(ret), L"バッファ取得失敗");
-
-  // レンダーターゲットビュー生成
-  ret = _device->CreateRenderTargetView(back_buffer_,
-    nullptr,
-    &_render_target_view);
-  back_buffer_->Release();
-  back_buffer_ = nullptr;
-  _ASSERT_EXPR(SUCCEEDED(ret), L"レンダーターゲット作成失敗");
-
-  // 出力マネージャにレンダーターゲットビュー設定
-  _device_context->OMSetRenderTargets(1,
-    &_render_target_view,
-    nullptr);
-
-  // ビューポート設定
-  D3D11_VIEWPORT view_port;
-  view_port.Width = static_cast<float>(width);
-  view_port.Height = static_cast<float>(height);
-  view_port.MinDepth = 0.f;
-  view_port.MaxDepth = 1.f;
-  view_port.TopLeftX = 0.f;
-  view_port.TopLeftY = 0.f;
-  _device_context->RSSetViewports(1, &view_port);
-
-  //LoadToCreateVertexShader(_device);
-
-  //LoadToCreateGeometryShader(_device);
-
-  //LoadToCreatePixelShader(_device);
-
-  //CreateVertexBuffers(_device);
-
-  //CreateInputLayout(_device, _device_context);
-
+  _ASSERT_EXPR(SUCCEEDED(ret), L"DirectX11Framework : デバイスの作成に失敗");
 }
 
-/// @fn ~DirectX11Module
-/// @brief デストラクタ
-DirectX11Module::~DirectX11Module() {
+/// @fn DeleteDevice
+/// @brief デバイス削除
+void DirectX11Module::_DeleteDevice() {
+  SafeRelease(_device_context);
+  SafeRelease(_device);
 }
 
+/// @fn Start
+/// @brief 始める
+void DirectX11Module::Start() {
+}
 
 void DirectX11Module::render() {
   // レンダーターゲットビューをクリア
   float clear_color[4] = { 0.3f, 0.3f, 1.f, 1.f };
-  _device_context->ClearRenderTargetView(_render_target_view, clear_color);
+  _device_context->ClearRenderTargetView(_swap_chain->_render_target_view, clear_color);
 
   // シェーダを設定して描画
   //_device_context->VSSetShader(vertex_shader, nullptr, 0);
@@ -456,7 +276,7 @@ void DirectX11Module::render() {
   //_device_context->Draw(3, 0);
 
   // フリップ
-  _swap_chain->Present(0, 0);
+  _swap_chain->Present();
 }
 
 //EOF
