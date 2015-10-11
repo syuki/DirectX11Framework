@@ -1,10 +1,9 @@
 
-struct GSPSInput {
+struct PsIn {
 	float4 Position : SV_POSITION;
+  float4 col : COLOR;
 };
 
-float4 main(GSPSInput output) : SV_Target0 {
-  return float4(1.0f, 1.0f, 1.0f, 1.0f);
+float4 main(PsIn arg) : SV_Target0 {
+  return arg.col;
 }
-
-

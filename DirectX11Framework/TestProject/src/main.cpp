@@ -9,6 +9,7 @@
 #include <Shader/InputLayout.h>
 #include <Util/DataContainer.h>
 #include <Buffer/VertexBuffer.h>
+#include <Util/Math.h>
 
 #pragma comment(lib, "DirectX11Framework.lib")
 
@@ -56,7 +57,7 @@ int WINAPI WinMain(HINSTANCE ins, HINSTANCE prev, LPSTR cmd, int show) {
   // データ作成
   auto vs_data = DataContainer::Get("res/shader/VertexShader.cso");
   auto ps_data = DataContainer::Get("res/shader/PixelShader.cso");
-  auto gs_data = DataContainer::Get("res/shader/GeometryShader.cso");
+  //auto gs_data = DataContainer::Get("res/shader/GeometryShader.cso");
 
   // シェーダ作成
   D3D11_INPUT_ELEMENT_DESC elem_desc[] = {
@@ -69,26 +70,51 @@ int WINAPI WinMain(HINSTANCE ins, HINSTANCE prev, LPSTR cmd, int show) {
         D3D11_INPUT_PER_VERTEX_DATA,  // 入力データクラス識別
         0                             // ステップレート
       },
+      {
+        "COLOR",                      // セマンティクス
+        0,                            // インデックス5
+        DXGI_FORMAT_R32G32B32A32_FLOAT,  // フォーマット
+        0,                            // 入力アセンブラー識別子(?)
+        4*3,                            // オフセット（バイト）（省略化）
+        D3D11_INPUT_PER_VERTEX_DATA,  // 入力データクラス識別
+        0                             // ステップレート
+      },
   };
   ULONG elem_count = sizeof(elem_desc) / sizeof(elem_desc[0]);
   auto vertex_shader = new VertexShader(device, vs_data);
   auto pixel_shader = new PixelShader(device, ps_data);
-  auto geometry_shader = new GeometryShader(device, gs_data);
+  //auto geometry_shader = new GeometryShader(device, gs_data);
   auto input_layout = new InputLayout(device, vs_data, elem_desc, elem_count);
 
   // シェーダ適応
   vertex_shader->SetVertexShader(context);
   pixel_shader->SetPixelShader(context);
-  geometry_shader->SetGeometryShader(context);
+  //geometry_shader->SetGeometryShader(context);
   input_layout->SetInputLayout(context);
 
   // 頂点バッファ作成
   float vertexes[] = {
-    0.f, 0.5f, 0.5f,
-    0.5f, -0.5f, 0.5f,
-    -0.5f, -0.5f, 0.5f,
+    // fu
+    -0.5f, +0.5f, -0.5f, 0, 1, 0, 1,
+    +0.5f, +0.5f, -0.5f, 0, 1, 0, 1,
+    -0.5f, -0.5f, -0.5f, 0, 1, 0, 1,
+
+    // fd
+    -0.5f, -0.5f, -0.5f, 0, 1, 0, 1,
+    +0.5f, +0.5f, -0.5f, 0, 1, 0, 1,
+    +0.5f, -0.5f, -0.5f, 0, 1, 0, 1,
+
+    // bu
+    +0.5f, +0.5f, +0.5f, 0, 0, 1, 1,
+    -0.5f, +0.5f, +0.5f, 0, 0, 1, 1,
+    +0.5f, -0.5f, +0.5f, 0, 0, 1, 1,
+
+    // bd
+    +0.5f, -0.5f, +0.5f, 0, 0, 1, 1,
+    -0.5f, +0.5f, +0.5f, 0, 0, 1, 1,
+    -0.5f, -0.5f, +0.5f, 0, 0, 1, 1,
   };
-  auto vertex_buffer = new VertexBuffer(device, vertexes, sizeof(vertexes), sizeof(float) * 3);
+  auto vertex_buffer = new VertexBuffer(device, vertexes, sizeof(vertexes), sizeof(float) * 7);
 
   // ビューポート設定
   D3D11_VIEWPORT view_port;
@@ -100,9 +126,36 @@ int WINAPI WinMain(HINSTANCE ins, HINSTANCE prev, LPSTR cmd, int show) {
   view_port.TopLeftY = 0.f;
   context->RSSetViewports(1, &view_port);
 
+
+
+  struct ConstantBuffer {
+    Matrix world;
+    Matrix view;
+    Matrix projection;
+  };
+  ConstantBuffer constant_buffer_data;
+
+  D3D11_BUFFER_DESC constant_buffer_desc = { 0 };
+  constant_buffer_desc.ByteWidth = sizeof(constant_buffer_data);
+  constant_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
+  constant_buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+  constant_buffer_desc.CPUAccessFlags = 0;
+  constant_buffer_desc.MiscFlags = 0;
+  constant_buffer_desc.StructureByteStride = sizeof(float);
+
+  ID3D11Buffer* constant_buffer;
+  HRESULT ret;
+  ret = device->CreateBuffer(&constant_buffer_desc, nullptr, &constant_buffer);
+  _ASSERT_EXPR(SUCCEEDED(ret), L"コンスタントバッファ作成失敗");
+
+
+
+
   // メッセージループ
+  float ff = 0;
+  constant_buffer_data.world.SetIdentity();
   while (left_window->MessageProcessing()) {
-    float clear_color[4] = { 1, 0, 1, 1 };
+    float clear_color[4] = { 0.5f, 0, 0.5f, 1.f };
     auto l_rtv = left_swap_chain->GetRenderTargetView();
     auto r_rtv = right_swap_chain->GetRenderTargetView();
 
@@ -110,11 +163,20 @@ int WINAPI WinMain(HINSTANCE ins, HINSTANCE prev, LPSTR cmd, int show) {
 
     context->OMSetRenderTargets(1, &l_rtv, nullptr);
 
+    ff += 0.001f;
+    constant_buffer_data.world.SetScale(10);
+    constant_buffer_data.world.SetIdentity();
+    constant_buffer_data.world.RotateY(-ff);
+    constant_buffer_data.view.SetView(Vector3(0, 0, -10), Vector3(0, 0, 1), Vector3(0, 1, 0));
+    constant_buffer_data.projection.PerthFovL(PI / 8.f, 4.f/3.f, 0.1f, 1000.f);
+    context->UpdateSubresource(constant_buffer, 0, nullptr, &constant_buffer_data, 0, 0);
+    context->VSSetConstantBuffers(0, 1, &constant_buffer);
+
     vertex_buffer->SetVertexBuffer(renderer->GetDeviceContext(), 0);
 
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    renderer->GetDeviceContext()->Draw(3, 0);
+    renderer->GetDeviceContext()->Draw(12, 0);
 
     left_swap_chain->Present();
 
@@ -124,9 +186,12 @@ int WINAPI WinMain(HINSTANCE ins, HINSTANCE prev, LPSTR cmd, int show) {
 
     right_swap_chain->Present();
   }
+
+  constant_buffer->Release();
+
   delete vertex_buffer;
   delete input_layout;
-  delete geometry_shader;
+  //delete geometry_shader;
   delete pixel_shader;
   delete vertex_shader;
 

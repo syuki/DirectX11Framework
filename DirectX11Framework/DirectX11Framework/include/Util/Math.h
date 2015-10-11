@@ -4,7 +4,11 @@
 /// @author syuki nishida
 #pragma once
 
+#include <math.h>
+
 namespace snlib {
+
+const float PI = 3.141592654f;
 
 /// @struct Vector2
 struct Vector2{
@@ -67,6 +71,26 @@ public:
   inline bool operator == (const Vector3& a) const{ return x==a.x&&y==a.y&&z==a.z; }
   inline bool operator != (const Vector3& a) const{ return x!=a.x&&y!=a.y&&z!=a.z; }
 
+  inline float Length() {
+    return sqrt(x * x + y * y + z * z);
+  }
+
+  inline Vector3& Normalize() {
+    *this *= 1.f / Length();
+    return *this;
+  }
+
+  inline Vector3& Cross(Vector3 l, Vector3 r) {
+    x = (l.y * r.z - l.z * r.y);
+    y = (l.z * r.x - l.x * r.z);
+    z = (l.x * r.y - l.y * r.x);
+    return *this;
+  }
+
+  inline float Dot(Vector3 l, Vector3 r) {
+    return l.x * r.x + l.y * r.y + l.z * r.z;
+  }
+
   float x, y, z;
 };
 
@@ -115,7 +139,7 @@ public:
 struct Matrix{
 public:
   inline Matrix() {}
-  inline Matrix(const float* p) : 
+  inline Matrix(const float* p) :
     _11(p[0]),  _12(p[1]),  _13(p[2]),  _14(p[3]),
     _21(p[4]),  _22(p[5]),  _23(p[6]),  _24(p[7]),
     _31(p[8]),  _32(p[9]),  _33(p[10]), _34(p[11]),
@@ -226,22 +250,108 @@ public:
     _31 / f, _32 / f, _33 / f, _34 / f,
     _41 / f, _42 / f, _43 / f, _44 / f); }
 
-  friend Matrix operator * (float f, const Matrix& m){ return Matrix(
+  inline friend Matrix operator * (float f, const Matrix& m){ return Matrix(
     m._11 * f, m._12 * f, m._13 * f, m._14 * f,
     m._21 * f, m._22 * f, m._23 * f, m._24 * f,
     m._31 * f, m._32 * f, m._33 * f, m._34 * f,
     m._41 * f, m._42 * f, m._43 * f, m._44 * f); }
 
-  bool operator != (const Matrix& m) const { return 
+  inline bool operator != (const Matrix& m) const { return 
     _11 != m._11 && _12 != m._12 && _13 != m._13 && _14 != m._14 &&
     _21 != m._21 && _22 != m._22 && _23 != m._23 && _24 != m._24 &&
     _31 != m._31 && _32 != m._32 && _33 != m._33 && _34 != m._34 &&
     _41 != m._41 && _42 != m._42 && _43 != m._43 && _44 != m._44; }
-  bool operator == (const Matrix& m) const { return 
+  inline bool operator == (const Matrix& m) const { return 
     _11 == m._11 && _12 == m._12 && _13 == m._13 && _14 == m._14 &&
     _21 == m._21 && _22 == m._22 && _23 == m._23 && _24 == m._24 &&
     _31 == m._31 && _32 == m._32 && _33 == m._33 && _34 == m._34 &&
     _41 == m._41 && _42 == m._42 && _43 == m._43 && _44 == m._44; }
+
+  inline Matrix& SetIdentity() {
+    _11 = 1; _12 = 0; _13 = 0; _14 = 0;
+    _21 = 0; _22 = 1; _23 = 0; _24 = 0;
+    _31 = 0; _32 = 0; _33 = 1; _34 = 0;
+    _41 = 0; _42 = 0; _43 = 0; _44 = 1;
+    return *this;
+  }
+
+  inline Matrix& SetTranslate(Vector3 pos) {
+    SetTranslate(pos.x, pos.y, pos.z);
+  }
+
+  inline Matrix& SetTranslate(float x, float y, float z) {
+    _11 = 1; _12 = 0; _13 = 0; _14 = 0;
+    _21 = 0; _22 = 1; _23 = 0; _24 = 0;
+    _31 = 0; _32 = 0; _33 = 1; _34 = 0;
+    _41 = x; _42 = y; _43 = z; _44 = 1;
+    return *this;
+  }
+
+  inline Matrix& SetScale(float s) {
+    return SetScale(s, s, s);
+  }
+
+  inline Matrix& SetScale(Vector3 v) {
+    return SetScale(v.x, v.y, v.z);
+  }
+
+  inline Matrix& SetScale(float x, float y, float z) {
+    _11 = x; _12 = 0; _13 = 0; _14 = 0;
+    _21 = 0; _22 = y; _23 = 0; _24 = 0;
+    _31 = 0; _32 = 0; _33 = z; _34 = 0;
+    _41 = 0; _42 = 0; _43 = 0; _44 = 1;
+    return *this;
+  }
+
+  inline Matrix& SetView(Vector3 eye, Vector3 at, Vector3 up) {
+    Vector3 z = (at - eye).Normalize();
+    Vector3 x = Vector3().Cross(up, z).Normalize();
+    Vector3 y = Vector3().Cross(z, x);
+    _11 = x.x;                    _12 = y.x;                    _13 = z.x;                    _14 = 0;
+    _21 = x.y;                    _22 = y.y;                    _23 = z.y;                    _24 = 0;
+    _31 = x.z;                    _32 = y.z;                    _33 = z.z;                    _34 = 0;
+    _41 = -Vector3().Dot(x, eye); _42 = -Vector3().Dot(y, eye); _43 = -Vector3().Dot(z, eye); _44 = 1;
+    return *this;
+  }
+
+  inline Matrix PerthL(float w, float h, float zn, float zf) {
+    _11 = 2 * zn / w; _12 = 0;          _13 = 0;                 _14 = 0;
+    _21 = 0;          _22 = 2 * zn / h; _23 = 0;                 _24 = 0;
+    _31 = 0;          _32 = 0;          _33 = zf / (zf - zn);    _34 = 1;
+    _41 = 0;          _42 = 0;          _43 = zn*zf / (zn - zf); _44 = 0;
+    return *this;
+  }
+
+  inline Matrix PerthFovL(float fovY, float aspect, float zn, float zf) {
+    float h = 1.f / tanf(fovY / 2.f);
+    float w = h / aspect;
+    _11 = w; _12 = 0; _13 = 0;                    _14 = 0;
+    _21 = 0; _22 = h; _23 = 0;                    _24 = 0;
+    _31 = 0; _32 = 0; _33 = zf / (zf - zn);       _34 = 1;
+    _41 = 0; _42 = 0; _43 = -zn * zf / (zf - zn); _44 = 0;
+    return *this;
+  }
+
+  inline Matrix& OrthoL(float w, float h, float zn, float zf) {
+    _11 = 2 / w; _12 = 0;     _13 = 0;             _14 = 0;
+    _21 = 0;     _22 = 2 / h; _23 = 0;             _24 = 0;
+    _31 = 0;     _32 = 0;     _33 = 1 / (zf - zn); _34 = 0;
+    _41 = 0;     _42 = 0;     _43 = zn / (zn - zf);_44 = 1;
+    return *this;
+  }
+
+  inline Matrix& RotateY(float angle) {
+    Matrix work;
+    work.SetIdentity();
+
+    work._11 = work._33 = cosf(angle);
+    work._13 = work._31 = sinf(angle);
+    work._13 *= -1;
+
+    *this = *this * work;
+
+    return *this;
+  }
 
   union {
     struct {
