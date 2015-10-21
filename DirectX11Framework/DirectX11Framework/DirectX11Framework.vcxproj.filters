@@ -38,12 +38,6 @@
     <ClInclude Include="include\Util\Math.h">
       <Filter>src\Util</Filter>
     </ClInclude>
-    <ClInclude Include="include\Renderer\DirectX11Module.h">
-      <Filter>src\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Renderer\SwapChain.h">
-      <Filter>src\Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="include\Util\RawData.h">
       <Filter>src\Util</Filter>
     </ClInclude>
@@ -65,16 +59,31 @@
     <ClInclude Include="include\Shader\PixelShader.h">
       <Filter>src\Shader</Filter>
     </ClInclude>
+    <ClInclude Include="include\Renderer\Device.h">
+      <Filter>src\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Renderer\Context.h">
+      <Filter>src\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Renderer\SwapChain.h">
+      <Filter>src\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Renderer\DxGiAdapter.h">
+      <Filter>src\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Util\FrameKeeper.h">
+      <Filter>src\Util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Renderer\DirectX11Modile.cpp">
-      <Filter>src\Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="src\Renderer\SwapChain.cpp">
       <Filter>src\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\Util\DataContainer.cpp">
       <Filter>src\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Renderer\Device.cpp">
+      <Filter>src\Renderer</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

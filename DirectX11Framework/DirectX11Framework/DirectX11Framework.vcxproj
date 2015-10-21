@@ -89,19 +89,22 @@
   <ItemGroup>
     <ClInclude Include="include\Buffer\VertexBuffer.h" />
     <ClInclude Include="include\Interface\ReferenceCountInterface.h" />
-    <ClInclude Include="include\Renderer\DirectX11Module.h" />
+    <ClInclude Include="include\Renderer\Context.h" />
+    <ClInclude Include="include\Renderer\Device.h" />
+    <ClInclude Include="include\Renderer\DxGiAdapter.h" />
     <ClInclude Include="include\Renderer\SwapChain.h" />
     <ClInclude Include="include\Shader\GeometryShader.h" />
     <ClInclude Include="include\Shader\InputLayout.h" />
     <ClInclude Include="include\Shader\PixelShader.h" />
     <ClInclude Include="include\Shader\VertexShader.h" />
     <ClInclude Include="include\Util\DataContainer.h" />
+    <ClInclude Include="include\Util\FrameKeeper.h" />
     <ClInclude Include="include\Util\RawData.h" />
     <ClInclude Include="include\Util\SafeFunctions.h" />
     <ClInclude Include="include\Util\Math.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Renderer\DirectX11Modile.cpp" />
+    <ClCompile Include="src\Renderer\Device.cpp" />
     <ClCompile Include="src\Renderer\SwapChain.cpp" />
     <ClCompile Include="src\Util\DataContainer.cpp" />
   </ItemGroup>

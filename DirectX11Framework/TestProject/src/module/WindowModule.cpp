@@ -157,7 +157,8 @@ bool WindowModule::Initialize() {
   non_client_width_ = client_rect.right - client_rect.left - client_width_;
   non_client_height_ = client_rect.bottom - client_rect.top - client_height_;
 
-  window_handle_ = CreateWindowW(
+  window_handle_ = CreateWindowExW(
+    WS_EX_APPWINDOW,
     window_class_name_.c_str(),
     caption_.c_str(),
     window_style_,
@@ -170,7 +171,9 @@ bool WindowModule::Initialize() {
     instance_handle_,
     nullptr);
 
-  ShowWindow(window_handle_, SW_SHOWDEFAULT);
+  ShowWindow(window_handle_, SW_SHOW);
+  SetForegroundWindow(window_handle_);
+  SetFocus(window_handle_);
   UpdateWindow(window_handle_);
 
   SendMessageW(window_handle_, WM_NULL, reinterpret_cast<WPARAM>(&callbacks_), 0x1233);

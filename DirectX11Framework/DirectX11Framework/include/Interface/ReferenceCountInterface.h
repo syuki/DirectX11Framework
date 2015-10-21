@@ -6,7 +6,7 @@
 
 #include <string.h>
 
-#define SNLIB_DEFAULT_RELEASE_FUNCTION unsigned long Release(){if(_counter==1){delete this;return 0;}return --_counter;}
+#define SNLIB_DEFAULT_RELEASE_FUNCTION inline unsigned long Release(){if(_counter==1){delete this;return 0;}return --_counter;}
 
 /// @namespace snlib
 namespace snlib {

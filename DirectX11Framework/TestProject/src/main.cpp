@@ -1,6 +1,8 @@
 #include <Windows.h>
 #include "module/WindowModule.h"
-#include <Renderer/DirectX11Module.h>
+#include <Renderer/Device.h>
+#include <Renderer/Context.h>
+#include <Renderer/DxGiAdapter.h>
 #include <Util/Math.h>
 #include <Renderer/SwapChain.h>
 #include <Shader/VertexShader.h>
@@ -10,6 +12,7 @@
 #include <Util/DataContainer.h>
 #include <Buffer/VertexBuffer.h>
 #include <Util/Math.h>
+#include <Util/FrameKeeper.h>
 
 #pragma comment(lib, "DirectX11Framework.lib")
 
@@ -36,28 +39,29 @@ int WINAPI WinMain(HINSTANCE ins, HINSTANCE prev, LPSTR cmd, int show) {
     if (w == VK_ESCAPE) { DestroyWindow(h); }
   });
 
-  auto right_window = new WindowModule(L"Right", 450, 800, ins);
-  right_window->Initialize();
-  right_window->SetMessageCallback(WM_DESTROY, [](HWND, WPARAM, LPARAM) {
-    PostQuitMessage(0);
-  });
-  right_window->SetMessageCallback(WM_KEYDOWN, [](HWND h, WPARAM w, LPARAM) {
-    if (w == VK_ESCAPE) { DestroyWindow(h); }
-  });
+  //auto right_window = new WindowModule(L"Right", 450, 800, ins);
+  //right_window->Initialize();
+  //right_window->SetMessageCallback(WM_DESTROY, [](HWND, WPARAM, LPARAM) {
+  //  PostQuitMessage(0);
+  //});
+  //right_window->SetMessageCallback(WM_KEYDOWN, [](HWND h, WPARAM w, LPARAM) {
+  //  if (w == VK_ESCAPE) { DestroyWindow(h); }
+  //});
 
   // レンダラ作成
-  auto renderer = DirectX11Module::CreateDirectX11Module();
-  auto device = renderer->GetDevice();
-  auto context = renderer->GetDeviceContext();
+  auto my_device = CreateDevice();
+  auto my_context = my_device->GetContext();
+  auto my_dxgi = CreateDxGiAdapter();
+  auto device = my_device->GetDevice();
+  auto context = my_context->GetContext();
 
   // スワップチェイン作成
-  auto left_swap_chain = renderer->CreateSwapChain(left_window->GetWindowHandle());
-  auto right_swap_chain = renderer->CreateSwapChain(right_window->GetWindowHandle());
+  auto left_swap_chain = my_dxgi->CreateSwapChain(my_device->GetDevice(),left_window->GetWindowHandle());
+  //auto right_swap_chain = my_dxgi->CreateSwapChain(my_device->GetDevice(),right_window->GetWindowHandle());
 
   // データ作成
   auto vs_data = DataContainer::Get("res/shader/VertexShader.cso");
   auto ps_data = DataContainer::Get("res/shader/PixelShader.cso");
-  //auto gs_data = DataContainer::Get("res/shader/GeometryShader.cso");
 
   // シェーダ作成
   D3D11_INPUT_ELEMENT_DESC elem_desc[] = {
@@ -65,7 +69,7 @@ int WINAPI WinMain(HINSTANCE ins, HINSTANCE prev, LPSTR cmd, int show) {
         "POSITION",                   // セマンティクス
         0,                            // インデックス5
         DXGI_FORMAT_R32G32B32_FLOAT,  // フォーマット
-        0,                            // 入力アセンブラー識別子(?)
+        1,                            // 入力アセンブラー識別子(?)
         0,                            // オフセット（バイト）（省略化）
         D3D11_INPUT_PER_VERTEX_DATA,  // 入力データクラス識別
         0                             // ステップレート
@@ -74,7 +78,7 @@ int WINAPI WinMain(HINSTANCE ins, HINSTANCE prev, LPSTR cmd, int show) {
         "COLOR",                      // セマンティクス
         0,                            // インデックス5
         DXGI_FORMAT_R32G32B32A32_FLOAT,  // フォーマット
-        0,                            // 入力アセンブラー識別子(?)
+        1,                            // 入力アセンブラー識別子(?)
         4*3,                            // オフセット（バイト）（省略化）
         D3D11_INPUT_PER_VERTEX_DATA,  // 入力データクラス識別
         0                             // ステップレート
@@ -83,50 +87,76 @@ int WINAPI WinMain(HINSTANCE ins, HINSTANCE prev, LPSTR cmd, int show) {
   ULONG elem_count = sizeof(elem_desc) / sizeof(elem_desc[0]);
   auto vertex_shader = new VertexShader(device, vs_data);
   auto pixel_shader = new PixelShader(device, ps_data);
-  //auto geometry_shader = new GeometryShader(device, gs_data);
   auto input_layout = new InputLayout(device, vs_data, elem_desc, elem_count);
 
   // シェーダ適応
   vertex_shader->SetVertexShader(context);
   pixel_shader->SetPixelShader(context);
-  //geometry_shader->SetGeometryShader(context);
   input_layout->SetInputLayout(context);
 
   // 頂点バッファ作成
   float vertexes[] = {
     // fu
-    -0.5f, +0.5f, -0.5f, 0, 1, 0, 1,
-    +0.5f, +0.5f, -0.5f, 0, 1, 0, 1,
-    -0.5f, -0.5f, -0.5f, 0, 1, 0, 1,
+    -0.5f, +0.5f, -0.5f, 1, 0, 0, 1,
+    +0.5f, +0.5f, -0.5f, 1, 0, 0, 1,
+    -0.5f, -0.5f, -0.5f, 1, 0, 0, 1,
 
     // fd
-    -0.5f, -0.5f, -0.5f, 0, 1, 0, 1,
-    +0.5f, +0.5f, -0.5f, 0, 1, 0, 1,
-    +0.5f, -0.5f, -0.5f, 0, 1, 0, 1,
+    -0.5f, -0.5f, -0.5f, 1, 0, 0, 1,
+    +0.5f, +0.5f, -0.5f, 1, 0, 0, 1,
+    +0.5f, -0.5f, -0.5f, 1, 0, 0, 1,
 
     // bu
-    +0.5f, +0.5f, +0.5f, 0, 0, 1, 1,
-    -0.5f, +0.5f, +0.5f, 0, 0, 1, 1,
-    +0.5f, -0.5f, +0.5f, 0, 0, 1, 1,
+    +0.5f, +0.5f, +0.5f, 1, 0, 0, 1,
+    -0.5f, +0.5f, +0.5f, 1, 0, 0, 1,
+    +0.5f, -0.5f, +0.5f, 1, 0, 0, 1,
 
     // bd
-    +0.5f, -0.5f, +0.5f, 0, 0, 1, 1,
+    +0.5f, -0.5f, +0.5f, 1, 0, 0, 1,
+    -0.5f, +0.5f, +0.5f, 1, 0, 0, 1,
+    -0.5f, -0.5f, +0.5f, 1, 0, 0, 1,
+
+    // lu
     -0.5f, +0.5f, +0.5f, 0, 0, 1, 1,
+    -0.5f, +0.5f, -0.5f, 0, 0, 1, 1,
     -0.5f, -0.5f, +0.5f, 0, 0, 1, 1,
+
+    // ld
+    -0.5f, -0.5f, +0.5f, 0, 0, 1, 1,
+    -0.5f, +0.5f, -0.5f, 0, 0, 1, 1,
+    -0.5f, -0.5f, -0.5f, 0, 0, 1, 1,
+
+    // ru
+    +0.5f, +0.5f, -0.5f, 0, 0, 1, 1,
+    +0.5f, +0.5f, +0.5f, 0, 0, 1, 1,
+    +0.5f, -0.5f, -0.5f, 0, 0, 1, 1,
+
+    // rd
+    +0.5f, -0.5f, -0.5f, 0, 0, 1, 1,
+    +0.5f, +0.5f, +0.5f, 0, 0, 1, 1,
+    +0.5f, -0.5f, +0.5f, 0, 0, 1, 1,
+
   };
   auto vertex_buffer = new VertexBuffer(device, vertexes, sizeof(vertexes), sizeof(float) * 7);
 
   // ビューポート設定
   D3D11_VIEWPORT view_port;
-  view_port.Width = static_cast<float>(800);
-  view_port.Height = static_cast<float>(600);
+  view_port.Width = static_cast<float>(1440);
+  view_port.Height = static_cast<float>(900);
   view_port.MinDepth = 0.f;
   view_port.MaxDepth = 1.f;
   view_port.TopLeftX = 0.f;
   view_port.TopLeftY = 0.f;
   context->RSSetViewports(1, &view_port);
 
+  auto adapter = my_dxgi->GetAdapter();
+  IDXGIOutput* output;
+  adapter->EnumOutputs(0, &output);
 
+  //left_swap_chain->ResizeBuffer(output);
+  //left_swap_chain->SetOutput(output, true);
+  //left_swap_chain->ResizeBuffer(output, true);
+  output->Release();
 
   struct ConstantBuffer {
     Matrix world;
@@ -148,50 +178,44 @@ int WINAPI WinMain(HINSTANCE ins, HINSTANCE prev, LPSTR cmd, int show) {
   ret = device->CreateBuffer(&constant_buffer_desc, nullptr, &constant_buffer);
   _ASSERT_EXPR(SUCCEEDED(ret), L"コンスタントバッファ作成失敗");
 
-
-
-
-  // メッセージループ
   float ff = 0;
-  constant_buffer_data.world.SetIdentity();
-  while (left_window->MessageProcessing()) {
-    float clear_color[4] = { 0.5f, 0, 0.5f, 1.f };
-    auto l_rtv = left_swap_chain->GetRenderTargetView();
-    auto r_rtv = right_swap_chain->GetRenderTargetView();
+  FrameKeeper fk(60, [&]{
+    left_swap_chain->Clear(context);
+    left_swap_chain->SetRenderTarget(context);
 
-    context->ClearRenderTargetView(l_rtv, clear_color);
-
-    context->OMSetRenderTargets(1, &l_rtv, nullptr);
-
-    ff += 0.001f;
+    ff += 0.1f;
     constant_buffer_data.world.SetScale(10);
     constant_buffer_data.world.SetIdentity();
     constant_buffer_data.world.RotateY(-ff);
     constant_buffer_data.view.SetView(Vector3(0, 0, -10), Vector3(0, 0, 1), Vector3(0, 1, 0));
-    constant_buffer_data.projection.PerthFovL(PI / 8.f, 4.f/3.f, 0.1f, 1000.f);
+    constant_buffer_data.projection.PerthFovL(PI / 8.f, 4.f / 3.f, 0.1f, 1000.f);
     context->UpdateSubresource(constant_buffer, 0, nullptr, &constant_buffer_data, 0, 0);
     context->VSSetConstantBuffers(0, 1, &constant_buffer);
 
-    vertex_buffer->SetVertexBuffer(renderer->GetDeviceContext(), 0);
+    vertex_buffer->SetVertexBuffer(context, 1);
 
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    renderer->GetDeviceContext()->Draw(12, 0);
+    context->Draw(24, 0);
 
     left_swap_chain->Present();
 
-    context->ClearRenderTargetView(r_rtv, clear_color);
+    //right_swap_chain->Clear(context);
+    //right_swap_chain->SetRenderTarget(context);
 
-    context->OMSetRenderTargets(1, &r_rtv, nullptr);
+    //right_swap_chain->Present();
+  });
 
-    right_swap_chain->Present();
+  // メッセージループ
+  constant_buffer_data.world.SetIdentity();
+  while (left_window->MessageProcessing()) {
+    fk.Step();
   }
 
   constant_buffer->Release();
 
   delete vertex_buffer;
   delete input_layout;
-  //delete geometry_shader;
   delete pixel_shader;
   delete vertex_shader;
 
@@ -199,15 +223,17 @@ int WINAPI WinMain(HINSTANCE ins, HINSTANCE prev, LPSTR cmd, int show) {
   DataContainer::Unregist("res/shader/pixel.cso");
   DataContainer::Unregist("res/shader/geometry.cso");
 
-  right_swap_chain->Release();
+  //right_swap_chain->Release();
   left_swap_chain->Release();
-  renderer->Release();
+  my_dxgi->Release();
+  my_context->Release();
+  my_device->Release();
 
   // 終了
   left_window->Finalize();
-  right_window->Finalize();
+  //right_window->Finalize();
   delete left_window;
-  delete right_window;
+  //delete right_window;
 
   return 0;
 }
